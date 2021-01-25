@@ -44,8 +44,10 @@ ENVIRONMENT = config.get("BOT", "environment")
 DEV_USER_NAME = config.get("BOT", "dev_user")
 RUNNING_FILE = "bot.pid"
 
-LOG_LEVEL = logging.INFO
-#LOG_LEVEL = logging.DEBUG
+if Settings['Config']['loglevel'] == "debug":
+    LOG_LEVEL = logging.DEBUG
+else:
+    LOG_LEVEL = logging.INFO
 LOG_FILENAME = Settings['Config']['logfile']
 LOG_FILE_INTERVAL = 2
 LOG_FILE_BACKUPCOUNT = 5
@@ -99,6 +101,25 @@ def check_processed_sql(messageid):
         if row:
             return True
         else:
+            return False
+    except sqlite3.Error as e:
+        logger.error("Error2 {}:".format(e.args[0]))
+        sys.exit(1)
+    finally:
+        if con:
+            con.close()
+
+
+def save_processed_sql(messageid):
+    logging.debug("Save processed for id=%s" % messageid)
+    try:
+        con = sqlite3.connect(Settings['Config']['dbfile'])
+        qcur = con.cursor()
+        qcur.execute('''SELECT id FROM processed WHERE id=?''', (messageid,))
+        row = qcur.fetchone()
+        if row:
+            return True
+        else:
             icur = con.cursor()
             insert_time = int(round(time.time()))
             icur.execute("INSERT INTO processed VALUES(?, ?)",
@@ -110,6 +131,7 @@ def check_processed_sql(messageid):
     finally:
         if con:
             con.close()
+
 
 
 def build_multireddit_groups(subreddits):
@@ -134,12 +156,20 @@ def process_submission(submission,lotideToken):
     subreddit = submission.subreddit
     subname = str(submission.subreddit.display_name).lower()
     authorname = str(submission.author)
+    subtime = submission.created_utc
     authorRedditLink = "http://reddit.com/user/%s" % authorname
     #lotideCommunity = Settings['lotide']['lotidecommunityid']
     lotideCommunityID = Settings['SubredditCommunities'][subname]
     rsubRedditLink = "http://reddit.com%s" % submission.permalink
 
-    logger.info("%-20s: process submission: %s user=%s http://reddit.com%s" % (subname, time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(submission.created_utc)), submission.author, submission.permalink))
+    # if post is less than postdelay_secs old, skip for now and process later
+    curtime = int(time.time())
+    subage = curtime - subtime
+    if subage < int(Settings['Config']['postdelay_secs']):
+        logger.debug("%-20s: SKIP submission: %s AGE=%s user=%s http://reddit.com%s" % (subname, time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(submission.created_utc)), subage, submission.author, submission.permalink))
+        return
+
+    logger.info("%-20s: process submission: %s AGE=%s user=%s http://reddit.com%s" % (subname, time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(submission.created_utc)), subage, submission.author, submission.permalink))
 
     lotideHeaders =  {
         'authorization': "Bearer " + lotideToken,
@@ -168,6 +198,7 @@ def process_submission(submission,lotideToken):
     except Exception as err:
             print(f'Other error occurred: {err}')
     
+    save_processed_sql(submission.id)
 
 
 def getLotideToken():
@@ -244,7 +275,7 @@ def main():
            subList_prev = subList
 
         subreddit = reddit.subreddit('+'.join(multi))
-        submission_stream = subreddit.stream.submissions(pause_after=-1)
+        submission_stream = subreddit.new()
 
         try:
           # process submission stream
