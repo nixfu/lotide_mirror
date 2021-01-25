@@ -177,7 +177,7 @@ def process_submission(submission,lotideToken):
         'cache-control': "no-cache",
     }
 
-    postContent = "[link to original reddit post](%s) by [/u/%s](%s)\n\n---\n\n" % (rsubRedditLink, authorname, authorRedditLink) 
+    postContent = "[link to original reddit post](%s) by [/u/%s](%s)\n\n---\n\n" % (rsubRedditLink, authorname, authorRedditLink)
     REGEX_TEST = r"((http|https):\/\/(.+).+?(jpg|png))"
     if re.search(REGEX_TEST, submission.url, re.IGNORECASE):
         postContent += "![%s](%s)\n\n" % (submission.url, submission.url)
