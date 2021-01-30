@@ -162,14 +162,15 @@ def process_submission(submission,lotideToken):
     lotideCommunityID = Settings['SubredditCommunities'][subname]
     rsubRedditLink = "http://reddit.com%s" % submission.permalink
 
-    # if post is less than postdelay_secs old, skip for now and process later
+    # if post is less than postdelay_secs old, OR does not have at least min number of vote
+    # then skip for now and process later
     curtime = int(time.time())
     subage = curtime - subtime
-    if subage < int(Settings['Config']['postdelay_secs']):
-        logger.debug("%-20s: SKIP submission: %s AGE=%s user=%s http://reddit.com%s" % (subname, time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(submission.created_utc)), subage, submission.author, submission.permalink))
+    if subage < int(Settings['Config']['postdelay_secs']) or submission.score < int(Settings['Config']['minscore']):
+        logger.debug("%-20s: SKIP submission: %s AGE=%s SCORE=%s user=%s http://reddit.com%s" % (subname, time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(submission.created_utc)), subage, submission.score, submission.author, submission.permalink))
         return
 
-    logger.info("%-20s: process submission: %s AGE=%s user=%s http://reddit.com%s" % (subname, time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(submission.created_utc)), subage, submission.author, submission.permalink))
+    logger.info("%-20s: process submission: %s AGE=%s SCORE=%s user=%s http://reddit.com%s" % (subname, time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(submission.created_utc)), subage, submission.score, submission.author, submission.permalink))
 
     lotideHeaders =  {
         'authorization': "Bearer " + lotideToken,
