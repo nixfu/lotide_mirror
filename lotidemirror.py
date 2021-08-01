@@ -191,13 +191,34 @@ def process_submission(submission,lotideToken):
         "href": submission.url
     }
 
+    # post reddit submission on lotide
     try:
         lotidePostResult = requests.post(Settings['lotide']['lotideurl']+"/api/unstable/posts", data=json.dumps(lotidePostData), headers=lotideHeaders)
         logger.debug("-- lotideResult: %s %s" % (lotidePostResult.status_code, lotidePostResult.content))
+        lotidePostResultData = json.loads(lotidePostResult.content)
+        lotidePostID = lotidePostResultData['id']
+        lotidePostURL = "%s/%s" % (Settings['hitide']['hitideurl'], lotidePostID)
     except HTTPError as http_err:
             print(f'HTTP error occurred: {http_err}')
     except Exception as err:
             print(f'Other error occurred: {err}')
+
+
+    # post comment reply to submission and sticky
+    try:
+        #rsubRedditLink = "http://reddit.com%s" % submission.permalink
+        logger.debug("+ Post hitide link to reddit: %s %s" % (submission.url, lotidePostURL))
+        redditLinkComment = "NOTE: This post was automatically [mirrored to the new Hoot platform beta](%s), currently under development by the /r/goldandblack team.  Come check it out, and help kick the tires.\n\n[*What is Hoot?*](https://dev.goldandblack.xyz/p/posts/4344)" %lotidePostURL
+        if subname in Settings['PostRedditLinks'] and Settings['PostRedditLinks'][subname].lower() == "true":
+           reddit_commentid = submission.reply(redditLinkComment) 
+           reddit_comment = reddit.comment(reddit_commentid)
+           reddit_comment.mod.distinguish(how="yes", sticky=True)
+           reddit_comment.mod.approve()
+           logger.debug("-- Reddit Link Comment posted: %s" % reddit_comment.permalink)
+        else:
+           logger.debug("-- Reddit Link Comment SKIPPED")
+    except Exception as err:
+        logger.debug('-- ERROR with reddit comment posting: {err}')
     
     save_processed_sql(submission.id)
 

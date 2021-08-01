@@ -18,7 +18,7 @@ if [ -f ${BOTDIR}/DONOTSTART ]; then
 fi
 
 if ! ps -ef |awk '{print $2}' |grep -q ${BOTPID}; then
-    	/usr/bin/screen -dmS mirror python3 -u lotidemirror.py
+    	/usr/bin/screen -L -dmS mirror python3 -u lotidemirror.py
 else
 	echo "Bot running: pid=${BOTPID}" 
 	exit 0
