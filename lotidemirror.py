@@ -208,7 +208,7 @@ def process_submission(submission,lotideToken):
     try:
         #rsubRedditLink = "http://reddit.com%s" % submission.permalink
         logger.debug("+ Post hitide link to reddit: %s %s" % (submission.url, lotidePostURL))
-        redditLinkComment = "NOTE: This post was automatically [mirrored to the new Hoot platform beta](%s), currently under development by the /r/goldandblack team.  Come check it out, and help kick the tires.\n\n[*What is Hoot?*](https://dev.goldandblack.xyz/p/posts/4344)" %lotidePostURL
+        redditLinkComment = "NOTE: This post was automatically [mirrored to the new Hoot platform beta](%s), currently under development by the /r/goldandblack team.  This is a new **REDDIT-LIKE** site to migrate to in the future. If you are growing more dissapointed in reddit, come check it out, and help kick the tires.\n\n[*What is Hoot?*](https://dev.goldandblack.xyz/p/posts/4344)" %lotidePostURL
         if subname in Settings['PostRedditLinks'] and Settings['PostRedditLinks'][subname].lower() == "true":
            reddit_commentid = submission.reply(redditLinkComment) 
            reddit_comment = reddit.comment(reddit_commentid)
